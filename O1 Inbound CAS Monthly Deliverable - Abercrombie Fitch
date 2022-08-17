@@ -1,0 +1,360 @@
+<dashboard theme="light">
+  <label>O1 Inbound CAS Monthly Deliverable - Abercrombie Fitch</label>
+  <row>
+    <panel>
+      <table>
+        <title>Report Header</title>
+        <search>
+          <progress>
+            <unset token="NOOP_1"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_1">noop</set>
+          </done>
+          <query>|inputlookup o1-billing-customers.csv
+| search custApiKey="zJQ4r7"
+| table custName
+| rename custName as info
+| append
+[
+| makeresults
+| eval info="O1 CAS Monthly"
+]
+| append
+[
+search index="o1-billing-analytics"
+  custApiKey=zJQ4r7
+| stats earliest_time(_time) as e latest(_time) as l
+| eval e_time=strftime(e,"%m/%d/%Y")
+| eval l_time=strftime(l,"%m/%d/%Y")
+| eval txt="Reporting Period: "
+| eval info = txt . e_time . " - " . l_time
+| table info
+]
+| fields - _time
+| rename info as "SecureLogix Report Information"</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Count by Strategy</title>
+        <search>
+          <progress>
+            <unset token="NOOP_2"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_2">noop</set>
+          </done>
+          <query>index="o1-billing-analytics"    custApiKey=zJQ4r7  NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) 
+| top showperc=t limit=120 vcvsQueried
+| eval percent=round(percent,0) 
+| eval percent = percent + " %"
+| eval count_display = tostring(count, "commas")
+| replace "false" with "Standard" in vcvsQueried 
+| replace "true" with "Advanced" in vcvsQueried 
+| rename vcvsQueried AS "Strategy" 
+| eval strategy_display = Strategy . " (" . count_display . ")"
+| table strategy_display count
+| $NOOP_1$</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <table>
+        <title>Count by Strategy</title>
+        <search>
+          <progress>
+            <unset token="NOOP_3"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_3">noop</set>
+          </done>
+          <query>index="o1-billing-analytics"    custApiKey=zJQ4r7  NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) 
+| top showperc=t  limit=120 vcvsQueried
+| replace "false" with "Standard" in vcvsQueried 
+| replace "true" with "Advanced" in vcvsQueried 
+| rename vcvsQueried AS "Strategy" 
+| eval percent=round(percent,0) 
+| eval percent = percent + " %"
+| $NOOP_2$</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="count">
+          <option name="precision">0</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Queries per Day</title>
+        <search>
+          <query>index="o1-billing-analytics"    custApiKey=zJQ4r7 NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) | timechart span=1d count fixedrange=f| $NOOP_3$</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+          <progress>
+            <unset token="NOOP_4"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_4">noop</set>
+          </done>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <table>
+        <title>Queries per day</title>
+        <search>
+          <query>index="o1-billing-analytics"    custApiKey=zJQ4r7 NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) | timechart span=1d count fixedrange=f | $NOOP_4$</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+          <progress>
+            <unset token="NOOP_5"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_5">noop</set>
+          </done>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="count">
+          <option name="precision">0</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Top 10 Provider's by Percentage</title>
+        <search>
+          <progress>
+            <unset token="NOOP_6"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_6">noop</set>
+          </done>
+          <query>index="o1-billing-analytics"    custApiKey=zJQ4r7 NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*)  
+| eval Time=strftime(eventTime/1000,"%a,%d %b %Y")  
+| chart count by npacDataProvider 
+| rename npacDataProvider AS "Provider"  
+| sort -count 
+| head 10
+| $NOOP_5$</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <table>
+        <title>Top 10 Provider's by Count</title>
+        <search>
+          <progress>
+            <unset token="NOOP_7"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_7">noop</set>
+          </done>
+          <query>index="o1-billing-analytics"    custApiKey=zJQ4r7 NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) 
+| chart count by npacDataProvider 
+| rename npacDataProvider AS "Provider"  
+| sort -count 
+| head 10
+| $NOOP_6$</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Summary by Score</title>
+        <search>
+          <progress>
+            <unset token="NOOP_8"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_8">noop</set>
+          </done>
+          <query>index="o1-billing-analytics"    custApiKey=zJQ4r7 vcvsQueried=false NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) | chart count by score | $NOOP_7$</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <table>
+        <title>Top 10 Score of 1 by Provider</title>
+        <search>
+          <progress>
+            <unset token="NOOP_9"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_9">noop</set>
+          </done>
+          <query>index="o1-billing-analytics"    custApiKey=zJQ4r7 NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) score=1
+| chart count by npacDataProvider 
+| rename npacDataProvider AS "Provider"
+| sort -count 
+| head 10
+| $NOOP_8$</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Repetitive same # Standard -5 top 10</title>
+        <search>
+          <query>index="o1-billing-analytics"    custApiKey=zJQ4r7 NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) vcvsQueried=false score=-5 | chart Count(score) AS Count by srcNum | sort - Count | where Count&gt;1 | head 10 | $NOOP_9$</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+          <progress>
+            <unset token="NOOP_10"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_10">noop</set>
+          </done>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Repetitive same # Standard -3 top 10</title>
+        <search>
+          <query>index="o1-billing-analytics"    custApiKey=zJQ4r7 NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) vcvsQueried=false score=-3  | stats count(score) as Count by srcNum | sort -Count score | where Count&gt;1 | head 10 | $NOOP_10$</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+          <progress>
+            <unset token="NOOP_11"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_11">noop</set>
+          </done>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Repetitive same # Standard -1 top 10</title>
+        <search>
+          <query>index="o1-billing-analytics"    custApiKey=zJQ4r7 NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) vcvsQueried=false score=-1  | stats count(score) as Count by srcNum | sort -Count score | where Count&gt;1 | head 10 | $NOOP_11$</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+          <progress>
+            <unset token="NOOP_12"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_12">noop</set>
+          </done>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>OLI Count Information</title>
+        <search>
+          <query>index="o1-billing-analytics"    custApiKey=zJQ4r7 NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) vcvsQueried=false | eval stdAuthScore = if(npacFound="false","-5",if(oliResult="-2","-4",if(oliResult="-1","-4",if(len(srcNum) &lt; 10,"-2",if(oliResult="0","1",if(oliResult="1","1",if(oliResult="2","3","1")))))))
+| rename detail.npacData.type AS "type"
+| eval Description = if((type="1" AND oliResult="2"), "Wireless sources with an OLI match", if((type="1" AND oliResult="-2"), "Wireless sources with an OLI mis-match", if(type="0", "Land Lines", if((type="0" AND oliResult="-1"), "Landline sources with an OLI of wireless", if(type IN ("2","3","5"), "VoIP", if(npacFound="false", "Not allocated to a carrier", if(oliParsed="false", "OLI was not available","OLI value other")))))))
+| stats count by Description
+| rename count AS "Count"
+| sort Description Asce
+| table Description Count
+| $NOOP_12$</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</dashboard>
