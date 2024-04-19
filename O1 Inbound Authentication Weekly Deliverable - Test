@@ -1,0 +1,317 @@
+<dashboard theme="light">
+  <label>O1 Inbound Authentication Weekly Deliverable - BoA Test</label>
+  <row>
+    <panel>
+      <table>
+        <title>Report Header</title>
+        <search>
+          <progress>
+            <unset token="NOOP_1"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_1">noop</set>
+          </done>
+          <query>|inputlookup o1-billing-customers.csv
+| search custApiKey=MvL7eG
+| table custName
+| rename custName as info
+| append
+[
+| makeresults
+| eval info="O1 Inbound Authentication Weekly"
+]
+| append
+[
+| makeresults 
+| eval info="Week " . strftime(relative_time(now(), "-1w@w"),"%V") . ": " .strftime(relative_time(now(), "-1w@w"),"%F")  
+]
+| fields - _time
+| rename info as "SecureLogix Report Information"</query>
+          <earliest>-1mon@mon</earliest>
+          <latest>@mon</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Summary by Score (Chart)</title>
+        <search>
+          <progress>
+            <unset token="NOOP_8"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_8">noop</set>
+          </done>
+          <query>index="o1-inbound" custApiKey=MvL7eG NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) | chart sum(RecCount) as count by score | sort score desc | eval noop=$NOOP_7$</query>
+          <earliest>-7d@w0</earliest>
+          <latest>@w0</latest>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <table>
+        <title>Summary by Score (Table)</title>
+        <search>
+          <query>index="o1-inbound" custApiKey=MvL7eG NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) | chart sum(RecCount) as count by score | sort score desc | eval noop=$NOOP_7$</query>
+          <earliest>-7d@w0</earliest>
+          <latest>@w0</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <format type="number" field="count">
+          <option name="precision">0</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Count by Strategy</title>
+        <search>
+          <progress>
+            <unset token="NOOP_2"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_2">noop</set>
+          </done>
+          <query>index="o1-inbound"  custApiKey=MvL7eG  NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) 
+| chart sum(RecCount) as count by vcvsQueried
+| eval count_display = tostring(count, "commas")
+| replace "false" with "Standard" in vcvsQueried 
+| replace "true" with "Advanced" in vcvsQueried 
+| rename vcvsQueried AS "Strategy" 
+| eval strategy_display = Strategy . " (" . count_display . ")"
+| table strategy_display count
+| eval noop=noop</query>
+          <earliest>-7d@w0</earliest>
+          <latest>@w0</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <table>
+        <title>Count by Strategy</title>
+        <search>
+          <progress>
+            <unset token="NOOP_3"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_3">noop</set>
+          </done>
+          <query>index="o1-inbound" custApiKey=MvL7eG  NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) 
+| eventstats sum(RecCount) as "totalCount"
+| eventstats sum(RecCount) as "choiceCount" by vcvsQueried
+| eval percent=(choiceCount/totalCount)*100
+| stats values(choiceCount) as count, values(percent) as percent by vcvsQueried
+| replace "false" with "Standard" in vcvsQueried 
+| replace "true" with "Advanced" in vcvsQueried 
+| rename vcvsQueried AS "Strategy"
+| eval percent=round(percent,0) 
+| eval percent = percent + " %"
+| eval noop=noop</query>
+          <earliest>-7d@w0</earliest>
+          <latest>@w0</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="count">
+          <option name="precision">0</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Queries per Day</title>
+        <search>
+          <progress>
+            <unset token="NOOP_4"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_4">noop</set>
+          </done>
+          <query>index="o1-inbound"    custApiKey=MvL7eG NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) | timechart span=1d sum(RecCount) as count fixedrange=f| eval noop=$NOOP_3$</query>
+          <earliest>-7d@w0</earliest>
+          <latest>@w0</latest>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <table>
+        <title>Queries per day</title>
+        <search>
+          <progress>
+            <unset token="NOOP_5"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_5">noop</set>
+          </done>
+          <query>index="o1-inbound"    custApiKey=MvL7eG NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) | timechart span=1d sum(RecCount) as count fixedrange=f | eval noop=$NOOP_4$</query>
+          <earliest>-7d@w0</earliest>
+          <latest>@w0</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="count">
+          <option name="precision">0</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Top 10 Provider's by Count</title>
+        <search>
+          <progress>
+            <unset token="NOOP_6"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_6">noop</set>
+          </done>
+          <query>index="o1-inbound"    custApiKey=MvL7eG NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*)  
+| eval Time=strftime(eventTime/1000,"%a,%d %b %Y")  
+| chart sum(RecCount) as count by npacDataProvider 
+| rename npacDataProvider AS "Provider"  
+| sort -count 
+| head 10
+| eval noop=$NOOP_5$</query>
+          <earliest>-7d@w0</earliest>
+          <latest>@w0</latest>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.showPercent">1</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <table>
+        <title>Top 10 Provider's by Count</title>
+        <search>
+          <progress>
+            <unset token="NOOP_7"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_7">noop</set>
+          </done>
+          <query>index="o1-inbound"    custApiKey=MvL7eG NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) 
+| chart sum(RecCount) as count by npacDataProvider 
+| rename npacDataProvider AS "Provider"  
+| sort -count 
+| head 10
+| eval noop=$NOOP_6$</query>
+          <earliest>-7d@w0</earliest>
+          <latest>@w0</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="count">
+          <option name="precision">0</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Top 10 Score of 1 by Provider</title>
+        <search>
+          <progress>
+            <unset token="NOOP_9"></unset>
+          </progress>
+          <done>
+            <set token="NOOP_9">noop</set>
+          </done>
+          <query>index="o1-inbound"    custApiKey=MvL7eG NOT srcNum IN (800*,822*,833*,844*,855*,866*,877*,888*,1800*,1822*,1833*,1844*,1855*,1866*,1877*,1888*,+1800*,+1822*,+1833*,+1844*,+1855*,+1866*,+1877*,+1888*) score=1
+| chart sum(RecCount) as count by npacDataProvider 
+| rename npacDataProvider AS "Provider"
+| sort -count 
+| head 10
+| eval noop=$NOOP_8$</query>
+          <earliest>-7d@w0</earliest>
+          <latest>@w0</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="wrap">true</option>
+        <format type="number" field="count">
+          <option name="precision">0</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Footer</title>
+        <search>
+          <query>| makeresults 
+| eval footer="PolicyGuru® Solution | ETM® System"
+| append
+[
+| makeresults | eval footer="
+ETM, We See Your Voice, SecureLogix, and the SecureLogix Emblem are registered trademarks or registered trademarks and registered service marks of SecureLogix Corporation in the U.S.A. and other countries. PolicyGuru is a registered trademark of SecureLogix Corporation in the U.S.A. All other trademarks mentioned herein are believed to be trademarks of their respective owners."
+]
+| append
+[
+| makeresults | eval footer="© Copyright 2018 SecureLogix Corporation. All Rights Reserved.  This product is protected by one or more of the following patents: US 6,249,575 B1, US 6,320,948 B1, US 6,687,353 B1, US 6,718,024 B1, US 6,760,420 B2, US 6,760,421 B2, US 6,879,671 B1, US 7,133,511 B2, US 7,231,027 B2, US 7,440,558 B2, US 8,150,013 B2, CA 2,354,149, DE 1,415,459 B1, FR 1,415,459 B1, and GB 1,415,459 B1. U.S Patent Pending."
+]
+| append 
+[
+| makeresults
+| eval footer="SecureLogix O1 Inbound Authentication Monthly Deliverable v1.1"
+| fields - _time
+]
+| table footer
+| rename footer as "SecureLogix TPC"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+</dashboard>
